@@ -1,17 +1,13 @@
 import type { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import { ROLES } from '@/lib/constants';
 import { uuid } from '@/lib/crypto';
+import {
+  isAllowedDomain,
+  getDefaultRole,
+  shouldAutoCreateUsers,
+  shouldRequireApproval,
+} from '@/lib/nextauth-utils';
 import prisma from '@/lib/prisma';
-
-function isAllowedDomain(email: string): boolean {
-  const allowedDomains = process.env.GOOGLE_ALLOWED_DOMAINS?.split(',').map(d => d.trim().toLowerCase());
-  if (!allowedDomains || allowedDomains.length === 0 || allowedDomains[0] === '') {
-    return true;
-  }
-  const emailDomain = email.split('@')[1]?.toLowerCase();
-  return allowedDomains.includes(emailDomain);
-}
 
 async function getUserByEmail(email: string) {
   return prisma.client.user.findFirst({
@@ -103,15 +99,12 @@ export const authOptions: NextAuthOptions = {
       }
 
       // New user flow
-      const autoCreate = process.env.GOOGLE_AUTO_CREATE_USERS === 'true';
-      const requireApproval = process.env.GOOGLE_REQUIRE_APPROVAL === 'true';
-
-      if (!autoCreate) {
+      if (!shouldAutoCreateUsers()) {
         return '/login?error=no_account';
       }
 
       // Create new user
-      const defaultRole = process.env.GOOGLE_DEFAULT_ROLE || ROLES.user;
+      const requireApproval = shouldRequireApproval();
       await prisma.client.user.create({
         data: {
           id: uuid(),
@@ -120,7 +113,7 @@ export const authOptions: NextAuthOptions = {
           email: email,
           provider: 'google',
           providerId: account.providerAccountId,
-          role: defaultRole,
+          role: getDefaultRole(),
           displayName: user.name || null,
           approved: !requireApproval,
         },

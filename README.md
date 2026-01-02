@@ -52,6 +52,42 @@ The connection URL format:
 postgresql://username:mypassword@localhost:5432/mydb
 ```
 
+### Google SSO (Optional)
+
+Umami supports Google Single Sign-On as an alternative to username/password authentication.
+
+1. **Create OAuth credentials** in [Google Cloud Console](https://console.cloud.google.com/):
+   - Go to APIs & Services > Credentials
+   - Create OAuth 2.0 Client ID (Web application)
+   - Add authorized redirect URI: `https://your-domain.com/api/auth/callback/google`
+
+2. **Add to your `.env` file**:
+
+```bash
+# Required for Google SSO
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
+NEXTAUTH_URL=https://your-domain.com
+NEXTAUTH_SECRET=your-secret  # Generate with: openssl rand -base64 32
+
+# Optional configuration
+GOOGLE_ALLOWED_DOMAINS=company.com,partner.org  # Restrict to specific email domains
+GOOGLE_AUTO_CREATE_USERS=true                   # Auto-create accounts for new users
+GOOGLE_REQUIRE_APPROVAL=false                   # Require admin approval for new accounts
+GOOGLE_DEFAULT_ROLE=user                        # Default role: user, view-only, admin
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID | Required |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | Required |
+| `NEXTAUTH_URL` | Your Umami instance URL | Required |
+| `NEXTAUTH_SECRET` | Secret for signing tokens | Required |
+| `GOOGLE_ALLOWED_DOMAINS` | Comma-separated list of allowed email domains | All domains |
+| `GOOGLE_AUTO_CREATE_USERS` | Auto-create accounts for new Google users | `false` |
+| `GOOGLE_REQUIRE_APPROVAL` | New accounts require admin approval | `false` |
+| `GOOGLE_DEFAULT_ROLE` | Default role for auto-created users | `user` |
+
 ### Build the Application
 
 ```bash
