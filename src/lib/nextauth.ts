@@ -12,16 +12,16 @@ import prisma from '@/lib/prisma';
 
 const log = debug('umami:auth:sso');
 
-// Validate required secrets in production
-if (process.env.NODE_ENV === 'production') {
-  if (!process.env.NEXTAUTH_SECRET) {
-    throw new Error('NEXTAUTH_SECRET environment variable is required in production');
-  }
-}
-
 // Log warning if Google SSO is not configured (non-blocking)
 if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
   log('Google SSO credentials not configured - SSO will be disabled');
+}
+
+// Validate NEXTAUTH_SECRET at runtime (not build time)
+function validateSecrets() {
+  if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_SECRET) {
+    throw new Error('NEXTAUTH_SECRET environment variable is required in production');
+  }
 }
 
 // Generic auth error to prevent account enumeration
@@ -75,6 +75,9 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
+      // Validate secrets at runtime
+      validateSecrets();
+
       if (account?.provider !== 'google') {
         return false;
       }
