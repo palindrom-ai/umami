@@ -12,11 +12,6 @@ import prisma from '@/lib/prisma';
 
 const log = debug('umami:auth:sso');
 
-// Log warning if Google SSO is not configured (non-blocking)
-if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-  log('Google SSO credentials not configured - SSO will be disabled');
-}
-
 // Validate NEXTAUTH_SECRET at runtime (not build time)
 function validateSecrets() {
   if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_SECRET) {
@@ -26,6 +21,20 @@ function validateSecrets() {
 
 // Generic auth error to prevent account enumeration
 const AUTH_ERROR_URL = '/login?error=auth_failed';
+
+// Build providers array conditionally - only add Google if credentials exist
+const providers: NextAuthOptions['providers'] = [];
+
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  providers.push(
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+  );
+} else {
+  log('Google SSO credentials not configured - SSO will be disabled');
+}
 
 async function getUserByEmail(email: string) {
   return prisma.client.user.findFirst({
@@ -67,12 +76,7 @@ async function getUserByProviderId(provider: string, providerId: string) {
 }
 
 export const authOptions: NextAuthOptions = {
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    }),
-  ],
+  providers,
   callbacks: {
     async signIn({ user, account }) {
       // Validate secrets at runtime
