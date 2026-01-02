@@ -1,0 +1,46 @@
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/nextauth';
+import { saveAuth } from '@/lib/auth';
+import { secret } from '@/lib/crypto';
+import { createSecureToken } from '@/lib/jwt';
+import redis from '@/lib/redis';
+import { unauthorized } from '@/lib/response';
+import { getUserByEmail, getAllUserTeams } from '@/queries/prisma';
+
+export async function GET(request: Request) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.email) {
+    return unauthorized({ code: 'no-session' });
+  }
+
+  const user = await getUserByEmail(session.user.email.toLowerCase());
+
+  if (!user) {
+    return unauthorized({ code: 'user-not-found' });
+  }
+
+  if (user.approved === false) {
+    return unauthorized({ code: 'pending-approval' });
+  }
+
+  const { id, role } = user;
+
+  let token: string;
+
+  if (redis.enabled) {
+    token = await saveAuth({ userId: id, role });
+  } else {
+    token = createSecureToken({ userId: id, role }, secret());
+  }
+
+  await getAllUserTeams(id);
+
+  // Redirect to SSO page with token
+  const url = new URL(request.url);
+  const redirectUrl = new URL('/sso', url.origin);
+  redirectUrl.searchParams.set('token', token);
+  redirectUrl.searchParams.set('url', '/');
+
+  return Response.redirect(redirectUrl.toString());
+}

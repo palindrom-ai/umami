@@ -13,7 +13,11 @@ datasource db {
 model User {
   id          String    @id @unique @map("user_id") @db.Uuid
   username    String    @unique @db.VarChar(255)
-  password    String    @db.VarChar(60)
+  password    String?   @db.VarChar(60)
+  email       String?   @unique @db.VarChar(255)
+  provider    String?   @map("provider") @db.VarChar(50)
+  providerId  String?   @map("provider_id") @db.VarChar(255)
+  approved    Boolean   @default(true) @map("approved")
   role        String    @map("role") @db.VarChar(50)
   logoUrl     String?   @map("logo_url") @db.VarChar(2183)
   displayName String?   @map("display_name") @db.VarChar(255)
@@ -28,6 +32,8 @@ model User {
   teams     TeamUser[]
   reports   Report[]
 
+  @@index([email])
+  @@index([provider, providerId])
   @@map("user")
 }
 

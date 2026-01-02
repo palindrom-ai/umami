@@ -7,18 +7,34 @@ import {
   Heading,
   Icon,
   PasswordField,
+  Row,
+  Text,
   TextField,
 } from '@umami/react-zen';
-import { useRouter } from 'next/navigation';
+import { AlertTriangle } from '@/components/icons';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useMessages, useUpdateQuery } from '@/components/hooks';
 import { Logo } from '@/components/svg';
 import { setClientAuthToken } from '@/lib/client';
 import { setUser } from '@/store/app';
 
+const SSO_ERROR_MAP: Record<string, string> = {
+  domain_not_allowed: 'domainNotAllowed',
+  no_account: 'noAccountExists',
+  pending_approval: 'pendingApproval',
+};
+
 export function LoginForm() {
-  const { formatMessage, labels, getErrorMessage } = useMessages();
+  const { formatMessage, labels, messages, getErrorMessage } = useMessages();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { mutateAsync, error } = useUpdateQuery('/auth/login');
+
+  const ssoError = searchParams.get('error');
+  const ssoErrorKey = ssoError ? SSO_ERROR_MAP[ssoError] : null;
+  const ssoErrorMessage = ssoErrorKey
+    ? formatMessage(messages[ssoErrorKey as keyof typeof messages])
+    : null;
 
   const handleSubmit = async (data: any) => {
     await mutateAsync(data, {
@@ -36,6 +52,24 @@ export function LoginForm() {
         <Logo />
       </Icon>
       <Heading>umami</Heading>
+      {ssoErrorMessage && (
+        <Row
+          alignItems="center"
+          justifyContent="center"
+          gap="2"
+          style={{
+            width: 300,
+            padding: '12px 16px',
+            backgroundColor: 'var(--red50)',
+            borderRadius: 4,
+          }}
+        >
+          <Icon size="sm">
+            <AlertTriangle />
+          </Icon>
+          <Text>{ssoErrorMessage}</Text>
+        </Row>
+      )}
       <Form onSubmit={handleSubmit} error={getErrorMessage(error)}>
         <FormField
           label={formatMessage(labels.username)}

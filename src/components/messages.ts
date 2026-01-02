@@ -84,6 +84,8 @@ export const labels = defineMessages({
   analytics: { id: 'label.analytics', defaultMessage: 'Analytics' },
   login: { id: 'label.login', defaultMessage: 'Login' },
   logout: { id: 'label.logout', defaultMessage: 'Logout' },
+  signInWithGoogle: { id: 'label.sign-in-with-google', defaultMessage: 'Sign in with Google' },
+  or: { id: 'label.or', defaultMessage: 'or' },
   singleDay: { id: 'label.single-day', defaultMessage: 'Single day' },
   dateRange: { id: 'label.date-range', defaultMessage: 'Date range' },
   viewDetails: { id: 'label.view-details', defaultMessage: 'View details' },
@@ -368,6 +370,18 @@ export const labels = defineMessages({
 export const messages = defineMessages({
   error: { id: 'message.error', defaultMessage: 'Something went wrong.' },
   saved: { id: 'message.saved', defaultMessage: 'Saved successfully.' },
+  domainNotAllowed: {
+    id: 'message.domain-not-allowed',
+    defaultMessage: 'Your email domain is not allowed to sign in.',
+  },
+  noAccountExists: {
+    id: 'message.no-account-exists',
+    defaultMessage: 'No account exists for this email. Please contact an administrator.',
+  },
+  pendingApproval: {
+    id: 'message.pending-approval',
+    defaultMessage: 'Your account is pending administrator approval.',
+  },
   noUsers: { id: 'message.no-users', defaultMessage: 'There are no users.' },
   userDeleted: { id: 'message.user-deleted', defaultMessage: 'User deleted.' },
   noDataAvailable: { id: 'message.no-data-available', defaultMessage: 'No data available.' },

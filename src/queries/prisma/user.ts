@@ -24,6 +24,10 @@ async function findUser(criteria: Prisma.UserFindUniqueArgs, options: GetUserOpt
       id: true,
       username: true,
       password: includePassword,
+      email: true,
+      provider: true,
+      providerId: true,
+      approved: true,
       role: true,
       createdAt: true,
     },
@@ -43,6 +47,55 @@ export async function getUser(userId: string, options: GetUserOptions = {}) {
 
 export async function getUserByUsername(username: string, options: GetUserOptions = {}) {
   return findUser({ where: { username } }, options);
+}
+
+export async function getUserByEmail(email: string, options: GetUserOptions = {}) {
+  const { includePassword = false } = options;
+
+  return prisma.client.user.findFirst({
+    where: {
+      email,
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      username: true,
+      password: includePassword,
+      email: true,
+      provider: true,
+      providerId: true,
+      approved: true,
+      role: true,
+      createdAt: true,
+    },
+  });
+}
+
+export async function getUserByProviderId(
+  provider: string,
+  providerId: string,
+  options: GetUserOptions = {},
+) {
+  const { includePassword = false } = options;
+
+  return prisma.client.user.findFirst({
+    where: {
+      provider,
+      providerId,
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      username: true,
+      password: includePassword,
+      email: true,
+      provider: true,
+      providerId: true,
+      approved: true,
+      role: true,
+      createdAt: true,
+    },
+  });
 }
 
 export async function getUsers(criteria: UserFindManyArgs, filters: QueryFilters = {}) {
@@ -71,7 +124,12 @@ export async function getUsers(criteria: UserFindManyArgs, filters: QueryFilters
 export async function createUser(data: {
   id: string;
   username: string;
-  password: string;
+  password: string | null;
+  email?: string | null;
+  provider?: string | null;
+  providerId?: string | null;
+  displayName?: string | null;
+  approved?: boolean;
   role: Role;
 }) {
   return prisma.client.user.create({
@@ -79,7 +137,9 @@ export async function createUser(data: {
     select: {
       id: true,
       username: true,
+      email: true,
       role: true,
+      approved: true,
     },
   });
 }
@@ -93,6 +153,9 @@ export async function updateUser(userId: string, data: Prisma.UserUpdateInput) {
     select: {
       id: true,
       username: true,
+      email: true,
+      provider: true,
+      approved: true,
       role: true,
       createdAt: true,
     },

@@ -11,6 +11,7 @@ export async function GET(request: Request) {
   return json({
     cloudMode: !!process.env.CLOUD_MODE,
     faviconUrl: process.env.FAVICON_URL,
+    googleSsoEnabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
     linksUrl: process.env.LINKS_URL,
     pixelsUrl: process.env.PIXELS_URL,
     privateMode: !!process.env.PRIVATE_MODE,

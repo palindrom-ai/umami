@@ -12,6 +12,7 @@ export { default as Export } from './Export';
 export { default as Flag } from './Flag';
 export { default as Funnel } from './Funnel';
 export { default as Gear } from './Gear';
+export { default as Google } from './Google';
 export { default as Lightbulb } from './Lightbulb';
 export { default as Lightning } from './Lightning';
 export { default as Location } from './Location';
