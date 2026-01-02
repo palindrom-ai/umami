@@ -1,13 +1,31 @@
+import debug from 'debug';
 import type { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import { uuid } from '@/lib/crypto';
 import {
-  isAllowedDomain,
   getDefaultRole,
+  isAllowedDomain,
   shouldAutoCreateUsers,
   shouldRequireApproval,
 } from '@/lib/nextauth-utils';
 import prisma from '@/lib/prisma';
+
+const log = debug('umami:auth:sso');
+
+// Validate required secrets in production
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.NEXTAUTH_SECRET) {
+    throw new Error('NEXTAUTH_SECRET environment variable is required in production');
+  }
+}
+
+// Log warning if Google SSO is not configured (non-blocking)
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+  log('Google SSO credentials not configured - SSO will be disabled');
+}
+
+// Generic auth error to prevent account enumeration
+const AUTH_ERROR_URL = '/login?error=auth_failed';
 
 async function getUserByEmail(email: string) {
   return prisma.client.user.findFirst({
@@ -68,7 +86,8 @@ export const authOptions: NextAuthOptions = {
 
       // Domain whitelist check
       if (!isAllowedDomain(email)) {
-        return '/login?error=domain_not_allowed';
+        log('Auth rejected: domain not allowed for email %s', email);
+        return AUTH_ERROR_URL;
       }
 
       // Check for existing user by provider ID or email
@@ -81,7 +100,8 @@ export const authOptions: NextAuthOptions = {
       if (existingUser) {
         // Check if user is approved
         if (existingUser.approved === false) {
-          return '/login?error=pending_approval';
+          log('Auth rejected: user pending approval for email %s', email);
+          return AUTH_ERROR_URL;
         }
 
         // Update provider info if not set
@@ -100,7 +120,8 @@ export const authOptions: NextAuthOptions = {
 
       // New user flow
       if (!shouldAutoCreateUsers()) {
-        return '/login?error=no_account';
+        log('Auth rejected: auto-create disabled, no existing account for email %s', email);
+        return AUTH_ERROR_URL;
       }
 
       // Create new user
@@ -120,7 +141,8 @@ export const authOptions: NextAuthOptions = {
       });
 
       if (requireApproval) {
-        return '/login?error=pending_approval';
+        log('Auth pending: new user %s requires admin approval', email);
+        return AUTH_ERROR_URL;
       }
 
       return true;
@@ -133,6 +155,10 @@ export const authOptions: NextAuthOptions = {
           token.role = dbUser.role;
           token.username = dbUser.username;
         }
+        // Set token expiration (24 hours)
+        const now = Math.floor(Date.now() / 1000);
+        token.iat = now;
+        token.exp = now + 24 * 60 * 60;
       }
       return token;
     },

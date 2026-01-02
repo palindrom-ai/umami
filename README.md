@@ -88,6 +88,25 @@ GOOGLE_DEFAULT_ROLE=user                        # Default role: user, view-only,
 | `GOOGLE_REQUIRE_APPROVAL` | New accounts require admin approval | `false` |
 | `GOOGLE_DEFAULT_ROLE` | Default role for auto-created users | `user` |
 
+#### Troubleshooting Google SSO
+
+**"auth_failed" error after clicking "Sign in with Google":**
+- Verify your `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are correct
+- Check that the redirect URI in Google Cloud Console matches: `https://your-domain.com/api/auth/callback/google`
+- Ensure `NEXTAUTH_URL` matches your actual domain (including protocol)
+
+**Login succeeds but immediately redirects back to login:**
+- Make sure `NEXTAUTH_SECRET` is set (generate with: `openssl rand -base64 32`)
+- Check that cookies are not being blocked by your browser
+
+**Domain restriction not working:**
+- Verify `GOOGLE_ALLOWED_DOMAINS` uses comma-separated values without spaces
+- Check logs for domain validation messages: `DEBUG=umami:auth:sso npm start`
+
+**Rate limiting issues:**
+- Default: 5 login attempts per 15 minutes per IP
+- Check logs: `DEBUG=umami:auth:rate-limit npm start`
+
 ### Build the Application
 
 ```bash

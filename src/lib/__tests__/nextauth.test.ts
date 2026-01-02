@@ -2,6 +2,46 @@
  * Tests for Google SSO / NextAuth configuration
  */
 
+describe('isValidEmail', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
+  });
+
+  test('returns true for valid email addresses', () => {
+    const { isValidEmail } = require('../nextauth-utils');
+    expect(isValidEmail('user@example.com')).toBe(true);
+    expect(isValidEmail('user.name@example.com')).toBe(true);
+    expect(isValidEmail('user+tag@example.co.uk')).toBe(true);
+  });
+
+  test('returns false for invalid email addresses', () => {
+    const { isValidEmail } = require('../nextauth-utils');
+    expect(isValidEmail('')).toBe(false);
+    expect(isValidEmail('not-an-email')).toBe(false);
+    expect(isValidEmail('missing@domain')).toBe(false);
+    expect(isValidEmail('@nodomain.com')).toBe(false);
+    expect(isValidEmail('spaces in@email.com')).toBe(false);
+  });
+
+  test('returns false for null/undefined', () => {
+    const { isValidEmail } = require('../nextauth-utils');
+    expect(isValidEmail(null)).toBe(false);
+    expect(isValidEmail(undefined)).toBe(false);
+  });
+
+  test('trims whitespace from email', () => {
+    const { isValidEmail } = require('../nextauth-utils');
+    expect(isValidEmail('  user@example.com  ')).toBe(true);
+  });
+});
+
 describe('isAllowedDomain', () => {
   const originalEnv = process.env;
 
@@ -47,6 +87,13 @@ describe('isAllowedDomain', () => {
     const { isAllowedDomain } = require('../nextauth-utils');
     expect(isAllowedDomain('user@company.com')).toBe(true);
     expect(isAllowedDomain('user@partner.org')).toBe(true);
+  });
+
+  test('returns false for invalid email formats', () => {
+    delete process.env.GOOGLE_ALLOWED_DOMAINS;
+    const { isAllowedDomain } = require('../nextauth-utils');
+    expect(isAllowedDomain('not-an-email')).toBe(false);
+    expect(isAllowedDomain('')).toBe(false);
   });
 });
 

@@ -1,10 +1,27 @@
 import { ROLES } from '@/lib/constants';
 
 /**
+ * Basic email format validation.
+ * Checks for a valid email structure without being overly strict.
+ */
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function isValidEmail(email: string): boolean {
+  if (!email || typeof email !== 'string') {
+    return false;
+  }
+  return EMAIL_REGEX.test(email.trim());
+}
+
+/**
  * Check if an email domain is allowed based on GOOGLE_ALLOWED_DOMAINS env var.
  * Returns true if no domain restriction is configured or if the email domain is whitelisted.
  */
 export function isAllowedDomain(email: string): boolean {
+  // Validate email format first
+  if (!isValidEmail(email)) {
+    return false;
+  }
   const allowedDomains = process.env.GOOGLE_ALLOWED_DOMAINS?.split(',').map(d =>
     d.trim().toLowerCase(),
   );

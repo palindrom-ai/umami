@@ -4,12 +4,18 @@ import { ROLES } from '@/lib/constants';
 import { secret } from '@/lib/crypto';
 import { createSecureToken } from '@/lib/jwt';
 import { checkPassword } from '@/lib/password';
+import { checkRateLimit, clearRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import redis from '@/lib/redis';
 import { parseRequest } from '@/lib/request';
-import { json, unauthorized } from '@/lib/response';
+import { json, tooManyRequests, unauthorized } from '@/lib/response';
 import { getAllUserTeams, getUserByUsername } from '@/queries/prisma';
 
 export async function POST(request: Request) {
+  // Rate limiting: 5 attempts per 15 minutes per IP
+  const rateLimitKey = getRateLimitKey(request);
+  if (!checkRateLimit(rateLimitKey, 5, 15 * 60 * 1000)) {
+    return tooManyRequests({ code: 'rate-limited' });
+  }
   const schema = z.object({
     username: z.string(),
     password: z.string(),
@@ -40,6 +46,9 @@ export async function POST(request: Request) {
   }
 
   const teams = await getAllUserTeams(id);
+
+  // Clear rate limit on successful login
+  clearRateLimit(rateLimitKey);
 
   return json({
     token,

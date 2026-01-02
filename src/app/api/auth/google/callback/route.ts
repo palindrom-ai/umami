@@ -1,13 +1,20 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/nextauth';
 import { saveAuth } from '@/lib/auth';
 import { secret } from '@/lib/crypto';
 import { createSecureToken } from '@/lib/jwt';
+import { authOptions } from '@/lib/nextauth';
+import { checkRateLimit, clearRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import redis from '@/lib/redis';
-import { unauthorized } from '@/lib/response';
-import { getUserByEmail, getAllUserTeams } from '@/queries/prisma';
+import { tooManyRequests, unauthorized } from '@/lib/response';
+import { getAllUserTeams, getUserByEmail } from '@/queries/prisma';
 
 export async function GET(request: Request) {
+  // Rate limiting: 10 attempts per 15 minutes per IP (higher limit for OAuth flow)
+  const rateLimitKey = getRateLimitKey(request, 'google-callback');
+  if (!checkRateLimit(rateLimitKey, 10, 15 * 60 * 1000)) {
+    return tooManyRequests({ code: 'rate-limited' });
+  }
+
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.email) {
@@ -35,6 +42,9 @@ export async function GET(request: Request) {
   }
 
   await getAllUserTeams(id);
+
+  // Clear rate limit on successful OAuth
+  clearRateLimit(rateLimitKey);
 
   // Redirect to SSO page with token
   const url = new URL(request.url);

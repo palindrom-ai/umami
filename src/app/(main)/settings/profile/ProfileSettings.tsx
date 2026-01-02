@@ -12,7 +12,8 @@ export function ProfileSettings() {
     return null;
   }
 
-  const { username, role } = user;
+  const { username, role, provider } = user;
+  const isOAuthUser = provider === 'google';
 
   const renderRole = (value: string) => {
     if (value === ROLES.user) {
@@ -38,7 +39,7 @@ export function ProfileSettings() {
         <Label>{formatMessage(labels.role)}</Label>
         {renderRole(role)}
       </Column>
-      {!cloudMode && (
+      {!cloudMode && !isOAuthUser && (
         <Column>
           <Label>{formatMessage(labels.password)}</Label>
           <Row>
