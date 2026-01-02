@@ -5,7 +5,8 @@ import { GoogleSignInButton } from '@/components/common/GoogleSignInButton';
 import { LoginForm } from './LoginForm';
 
 export function LoginPage() {
-  const { googleSsoEnabled } = useConfig();
+  const config = useConfig();
+  const googleSsoEnabled = config?.googleSsoEnabled;
 
   return (
     <Column alignItems="center" height="100vh" backgroundColor="2" paddingTop="12">
