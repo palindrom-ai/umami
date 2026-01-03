@@ -47,8 +47,13 @@ export async function GET(request: Request) {
   clearRateLimit(rateLimitKey);
 
   // Redirect to SSO page with token
-  const url = new URL(request.url);
-  const redirectUrl = new URL('/sso', url.origin);
+  // Use forwarded headers or NEXTAUTH_URL to get correct origin behind reverse proxy
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+  const baseUrl = forwardedHost
+    ? `${forwardedProto}://${forwardedHost}`
+    : process.env.NEXTAUTH_URL || new URL(request.url).origin;
+  const redirectUrl = new URL('/sso', baseUrl);
   redirectUrl.searchParams.set('token', token);
   redirectUrl.searchParams.set('url', '/');
 

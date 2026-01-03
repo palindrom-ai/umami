@@ -91,6 +91,7 @@ async function getUserByProviderId(provider: string, providerId: string) {
 }
 
 export const authOptions: NextAuthOptions = {
+  trustHost: true,
   debug: process.env.NEXTAUTH_DEBUG === 'true',
   providers,
   logger: {
