@@ -25,14 +25,29 @@ const AUTH_ERROR_URL = '/login?error=auth_failed';
 // Build providers array conditionally - only add Google if credentials exist
 const providers: NextAuthOptions['providers'] = [];
 
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+// Log configuration status (masked for security)
+console.log('[NextAuth] Configuration check:', {
+  hasGoogleClientId: !!googleClientId,
+  googleClientIdLength: googleClientId?.length || 0,
+  hasGoogleClientSecret: !!googleClientSecret,
+  googleClientSecretLength: googleClientSecret?.length || 0,
+  hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
+  nextAuthUrl: process.env.NEXTAUTH_URL || 'not set',
+});
+
+if (googleClientId && googleClientSecret) {
   providers.push(
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
     }),
   );
+  console.log('[NextAuth] Google provider registered successfully');
 } else {
+  console.warn('[NextAuth] Google SSO credentials not configured - SSO will be disabled');
   log('Google SSO credentials not configured - SSO will be disabled');
 }
 
@@ -76,6 +91,7 @@ async function getUserByProviderId(provider: string, providerId: string) {
 }
 
 export const authOptions: NextAuthOptions = {
+  debug: process.env.NEXTAUTH_DEBUG === 'true',
   providers,
   callbacks: {
     async signIn({ user, account }) {
